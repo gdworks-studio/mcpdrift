@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import shutil
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -47,7 +49,17 @@ def load_config(path: Path) -> ServerConfig:
         if not isinstance(env, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in env.items()):
             raise ConfigError("[server].env must be a table of string values")
 
-    return ServerConfig(command=command, args=args, env=env, cwd=config_path.parent)
+    return ServerConfig(command=_resolve_command(command), args=args, env=env, cwd=config_path.parent)
+
+
+def _resolve_command(command: str) -> str:
+    # A bare `python`/`python3` (common in samples/quickstarts) is often not on
+    # PATH — stock macOS ships only `python3`, and you may run mcpdrift without an
+    # activated venv. Fall back to the interpreter running mcpdrift, which has the
+    # deps installed. An explicit path or any other command is left untouched.
+    if command in {"python", "python3"} and shutil.which(command) is None:
+        return sys.executable
+    return command
 
 
 def _table(data: dict[str, Any], key: str) -> dict[str, Any]:
