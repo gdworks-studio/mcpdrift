@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 def run_cli(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    command = [sys.executable, "-m", "mcpflight.cli", *args]
+    command = [sys.executable, "-m", "mcpdrift.cli", *args]
     return subprocess.run(command, cwd=repo, text=True, capture_output=True)
 
 
@@ -17,7 +17,7 @@ def test_init_then_diff_detects_required_input_mutation(tmp_path: Path):
     repo.mkdir()
     server_dir = repo / "sample_server"
     shutil.copytree(Path("examples/sample_server"), server_dir)
-    config = server_dir / "mcpflight.toml"
+    config = server_dir / "mcpdrift.toml"
     # Make the test hermetic: launch the sample server with the same interpreter
     # running the tests (which has `mcp` installed), not a bare `python` that may
     # be absent or lack deps on the host PATH.
@@ -26,7 +26,7 @@ def test_init_then_diff_detects_required_input_mutation(tmp_path: Path):
     init = run_cli(repo, "init", "--config", str(config))
 
     assert init.returncode == 0, init.stderr
-    snapshot = json.loads((repo / ".mcpflight" / "contract.json").read_text())
+    snapshot = json.loads((repo / ".mcpdrift" / "contract.json").read_text())
     assert [tool["name"] for tool in snapshot["tools"]] == ["lookup_issue", "search_docs"]
 
     server_file = server_dir / "server.py"

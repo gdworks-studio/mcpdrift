@@ -11,7 +11,7 @@ except ModuleNotFoundError:  # pragma: no cover - Python 3.10 fallback
 
 
 class ConfigError(Exception):
-    """Raised when mcpflight.toml cannot be used."""
+    """Raised when mcpdrift.toml cannot be used."""
 
 
 @dataclass(frozen=True)

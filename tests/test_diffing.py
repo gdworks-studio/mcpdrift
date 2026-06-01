@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from mcpflight.diffing import compare_contracts
+from mcpdrift.diffing import compare_contracts
 
 
 def contract(tools):

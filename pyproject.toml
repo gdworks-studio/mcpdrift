@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mcpflight"
+name = "mcpdrift"
 version = "0.1.0"
 description = "Local-first MCP contract snapshot and drift detection CLI."
 readme = "README.md"
@@ -24,7 +24,7 @@ test = [
 ]
 
 [project.scripts]
-mcpflight = "mcpflight.cli:app"
+mcpdrift = "mcpdrift.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]

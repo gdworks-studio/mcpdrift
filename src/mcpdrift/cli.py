@@ -15,14 +15,14 @@ from .status import read_status, write_status
 
 app = typer.Typer(help="Snapshot and diff MCP server contracts.")
 
-DEFAULT_CONFIG = Path("mcpflight.toml")
-SNAPSHOT_PATH = Path(".mcpflight/contract.json")
-STATUS_PATH = Path(".mcpflight/status.json")
+DEFAULT_CONFIG = Path("mcpdrift.toml")
+SNAPSHOT_PATH = Path(".mcpdrift/contract.json")
+STATUS_PATH = Path(".mcpdrift/status.json")
 
 
 @app.command()
 def init(
-    config: Path = typer.Option(DEFAULT_CONFIG, "--config", help="Path to mcpflight.toml."),
+    config: Path = typer.Option(DEFAULT_CONFIG, "--config", help="Path to mcpdrift.toml."),
 ) -> None:
     """Capture the current MCP contract."""
     try:
@@ -31,17 +31,17 @@ def init(
         _fail(str(exc))
     write_snapshot(SNAPSHOT_PATH, contract)
     write_status(STATUS_PATH, 0, 0)
-    typer.echo(_summary("Snapshot written to .mcpflight/contract.json", contract))
+    typer.echo(_summary("Snapshot written to .mcpdrift/contract.json", contract))
 
 
 @app.command()
 def diff(
-    config: Path = typer.Option(DEFAULT_CONFIG, "--config", help="Path to mcpflight.toml."),
+    config: Path = typer.Option(DEFAULT_CONFIG, "--config", help="Path to mcpdrift.toml."),
     update: bool = typer.Option(False, "--update", help="Overwrite the saved snapshot after diffing."),
 ) -> None:
     """Compare the saved snapshot with the current MCP contract."""
     if not SNAPSHOT_PATH.exists():
-        _fail("no saved snapshot found; run mcpflight init first")
+        _fail("no saved snapshot found; run mcpdrift init first")
 
     try:
         current = asyncio.run(capture_contract(load_config(config)))
@@ -65,7 +65,7 @@ def diff(
 def badge(
     markdown: bool = typer.Option(False, "--markdown", help="Emit a Markdown badge snippet."),
     url: str = typer.Option(
-        "https://example.com/mcpflight/status.json",
+        "https://example.com/mcpdrift/status.json",
         "--url",
         help="Public URL where the shields.io endpoint JSON will be hosted.",
     ),

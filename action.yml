@@ -1,11 +1,11 @@
-name: MCPFlight contract diff
-description: Run mcpflight diff, comment the report on PRs, and fail on breaking MCP contract drift.
+name: mcpdrift contract diff
+description: Run mcpdrift diff, comment the report on PRs, and fail on breaking MCP contract drift.
 
 inputs:
   config:
-    description: Path to mcpflight.toml in the checked-out repository.
+    description: Path to mcpdrift.toml in the checked-out repository.
     required: false
-    default: mcpflight.toml
+    default: mcpdrift.toml
   github-token:
     description: GitHub token used to comment on pull requests.
     required: false
@@ -17,22 +17,22 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install MCPFlight
+    - name: Install mcpdrift
       shell: bash
       run: python -m pip install "$GITHUB_ACTION_PATH"
 
-    - name: Run MCPFlight diff
+    - name: Run mcpdrift diff
       id: diff
       shell: bash
       run: |
         set +e
-        mcpflight diff --config "${{ inputs.config }}" > mcpflight-diff.txt 2>&1
+        mcpdrift diff --config "${{ inputs.config }}" > mcpdrift-diff.txt 2>&1
         status=$?
-        cat mcpflight-diff.txt
+        cat mcpdrift-diff.txt
         echo "exit_code=$status" >> "$GITHUB_OUTPUT"
         {
           echo "body<<EOF"
-          cat mcpflight-diff.txt
+          cat mcpdrift-diff.txt
           echo "EOF"
         } >> "$GITHUB_OUTPUT"
         exit 0
@@ -41,14 +41,14 @@ runs:
       if: ${{ github.event_name == 'pull_request' && inputs.comment == 'true' && inputs.github-token != '' }}
       uses: actions/github-script@v7
       env:
-        MCPFLIGHT_DIFF_BODY: ${{ steps.diff.outputs.body }}
+        MCPDRIFT_DIFF_BODY: ${{ steps.diff.outputs.body }}
       with:
         github-token: ${{ inputs.github-token }}
         script: |
-          const body = `### MCPFlight contract diff
+          const body = `### mcpdrift contract diff
 
           \`\`\`
-          ${process.env.MCPFLIGHT_DIFF_BODY}
+          ${process.env.MCPDRIFT_DIFF_BODY}
           \`\`\``;
           await github.rest.issues.createComment({
             owner: context.repo.owner,

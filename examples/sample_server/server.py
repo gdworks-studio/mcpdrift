@@ -3,7 +3,7 @@ from __future__ import annotations
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel
 
-mcp = FastMCP("MCPFlight Sample")
+mcp = FastMCP("mcpdrift Sample")
 
 
 class SearchDocsResult(BaseModel):
@@ -29,7 +29,7 @@ def lookup_issue(issue_id: int) -> LookupIssueResult:
 
 @mcp.resource("docs://status", name="status", description="Sample status resource")
 def status_resource() -> str:
-    return "MCPFlight sample server is healthy."
+    return "mcpdrift sample server is healthy."
 
 
 @mcp.prompt(description="Create a short triage plan for a documentation area.")

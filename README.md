@@ -1,20 +1,22 @@
-# MCPFlight
+# mcpdrift
 
 Catch MCP tool and schema regressions before your users' agents do.
 
-MCPFlight is a local-first CLI for MCP servers. It connects to a server over stdio, snapshots the server contract, then diffs future runs against that snapshot. v0.1 captures structural metadata only: tool names, descriptions, input schemas, output schemas, resources, and prompts. It does not call tools, collect user data, send telemetry, or require a hosted backend.
+mcpdrift is a local-first CLI for MCP servers. It connects to a server over stdio, snapshots the server contract, then diffs future runs against that snapshot. v0.1 captures structural metadata only: tool names, descriptions, input schemas, output schemas, resources, and prompts. It does not call tools, collect user data, send telemetry, or require a hosted backend.
 
 ## 5-minute quickstart
 
 Requires Python 3.10 or newer.
 
 ```bash
-git clone https://github.com/your-org/mcpflight.git
-cd mcpflight
+git clone https://github.com/gdworks-studio/mcpdrift.git
+cd mcpdrift
 python -m pip install -e .
 ```
 
-Create `mcpflight.toml` in the repo that owns your MCP server:
+Run `mcpdrift` in the same environment as your MCP server (so its `command` launches the server with the right interpreter).
+
+Create `mcpdrift.toml` in the repo that owns your MCP server:
 
 ```toml
 [server]
@@ -26,15 +28,15 @@ args = ["-m", "my_server"]
 Capture the baseline contract:
 
 ```bash
-mcpflight init
-git add mcpflight.toml .mcpflight/contract.json
+mcpdrift init
+git add mcpdrift.toml .mcpdrift/contract.json
 git commit -m "test: add MCP contract snapshot"
 ```
 
 Check for drift in CI or before a release:
 
 ```bash
-mcpflight diff
+mcpdrift diff
 ```
 
 Exit codes:
@@ -47,13 +49,13 @@ Exit codes:
 
 ```bash
 python -m pip install -e '.[test]'
-mcpflight init --config examples/sample_server/mcpflight.toml
-mcpflight diff --config examples/sample_server/mcpflight.toml
+mcpdrift init --config examples/sample_server/mcpdrift.toml
+mcpdrift diff --config examples/sample_server/mcpdrift.toml
 ```
 
-The snapshot is written to `.mcpflight/contract.json` in your current working directory. Commit that file with your server so future diffs have a baseline.
+The snapshot is written to `.mcpdrift/contract.json` in your current working directory. Commit that file with your server so future diffs have a baseline.
 
-## What MCPFlight classifies
+## What mcpdrift classifies
 
 Breaking changes:
 
@@ -77,18 +79,18 @@ Non-breaking changes:
 After a diff run, emit shields.io endpoint JSON:
 
 ```bash
-mcpflight badge > .mcpflight/status.json
+mcpdrift badge > .mcpdrift/status.json
 ```
 
 Or print a Markdown snippet:
 
 ```bash
-mcpflight badge --markdown --url https://example.com/mcpflight/status.json
+mcpdrift badge --markdown --url https://example.com/mcpdrift/status.json
 ```
 
 ## GitHub Action
 
-This repo includes a composite action that installs MCPFlight, runs `mcpflight diff`, comments the report on pull requests, and fails the check when breaking drift is detected.
+This repo includes a composite action that installs mcpdrift, runs `mcpdrift diff`, comments the report on pull requests, and fails the check when breaking drift is detected.
 
 ```yaml
 name: MCP contract
@@ -99,16 +101,16 @@ on:
     branches: [main]
 
 jobs:
-  mcpflight:
+  mcpdrift:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - uses: gdworks/mcpflight@v0.1
+      - uses: gdworks-studio/mcpdrift@v0.1
         with:
-          config: mcpflight.toml
+          config: mcpdrift.toml
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
@@ -117,12 +119,12 @@ For local development of this repo, use:
 ```yaml
 - uses: ./
   with:
-    config: examples/sample_server/mcpflight.toml
+    config: examples/sample_server/mcpdrift.toml
     github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## v0.1 scope
 
-MCPFlight v0.1 is stdio-only. If `transport = "http"` or another future transport appears in config, the CLI exits with a clear unsupported-transport message.
+mcpdrift v0.1 is stdio-only. If `transport = "http"` or another future transport appears in config, the CLI exits with a clear unsupported-transport message.
 
 Out of scope for v0.1: streamable HTTP, record/replay testing, risk/security checks, TypeScript/npm packaging, hosted history, telemetry, and any backend service.
