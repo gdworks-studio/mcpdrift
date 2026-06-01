@@ -18,6 +18,10 @@ def test_init_then_diff_detects_required_input_mutation(tmp_path: Path):
     server_dir = repo / "sample_server"
     shutil.copytree(Path("examples/sample_server"), server_dir)
     config = server_dir / "mcpflight.toml"
+    # Make the test hermetic: launch the sample server with the same interpreter
+    # running the tests (which has `mcp` installed), not a bare `python` that may
+    # be absent or lack deps on the host PATH.
+    config.write_text(config.read_text().replace('command = "python"', f'command = "{sys.executable}"'))
 
     init = run_cli(repo, "init", "--config", str(config))
 
