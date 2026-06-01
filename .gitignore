@@ -5,3 +5,7 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+
+# mcpdrift's own scratch (not part of the published package)
+.codex-reports/
+/.mcpdrift/
