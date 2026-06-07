@@ -43,7 +43,7 @@ runs:
 
     - name: Comment on pull request
       if: ${{ github.event_name == 'pull_request' && inputs.comment == 'true' && inputs.github-token != '' }}
-      uses: actions/github-script@v7
+      uses: actions/github-script@v9
       env:
         MCPDRIFT_DIFF_BODY: ${{ steps.diff.outputs.body }}
       with:
