@@ -1,0 +1,17 @@
+version: 2
+
+# Automated dependency updates (Argus / dept 15). Weekly PRs for outdated/
+# vulnerable deps; each runs through the studio-os-gate before merge. Pairs
+# with security-rescan.yml.
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies"]
