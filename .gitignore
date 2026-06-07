@@ -8,4 +8,6 @@ build/
 
 # mcpdrift's own scratch (not part of the published package)
 .codex-reports/
-/.mcpdrift/
+# Ignore mcpdrift scratch, but track the dogfood baseline the CI diffs against.
+/.mcpdrift/*
+!/.mcpdrift/contract.json
