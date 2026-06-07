@@ -1,0 +1,30 @@
+name: dependabot-automerge
+
+# Auto-merge low-risk Dependabot PRs (patch/minor deps + GitHub Action bumps)
+# ONCE the studio-os-gate is green. Major bumps are left for human review.
+# Note: branch protection still requires code-owner review, so a low-risk PR
+# auto-merges after the gate passes AND the reviewer approves (no manual merge
+# click). github context is routed via env (no run-body interpolation).
+
+on: pull_request_target
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Enable auto-merge for low-risk updates
+        if: ${{ steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor' || steps.meta.outputs.package-ecosystem == 'github_actions' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR_URL"
