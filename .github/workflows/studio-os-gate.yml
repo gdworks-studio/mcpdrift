@@ -73,7 +73,7 @@ jobs:
           pip freeze > requirements.txt
       - name: OSV-Scanner (frozen requirements)
         run: |
-          curl -sSfL "https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64" -o osv-scanner
+          curl -sSfL --retry 5 --retry-all-errors --retry-delay 3 --connect-timeout 15 "https://github.com/google/osv-scanner/releases/download/v2.3.8/osv-scanner_linux_amd64" -o osv-scanner
           chmod +x osv-scanner
           ./osv-scanner --lockfile=requirements.txt
 
