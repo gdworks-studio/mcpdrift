@@ -1,0 +1,10 @@
+# CODEOWNERS — required human review on high-blast-radius paths.
+# Agent work is pushed under gdworks-studio; @geloumart2014-source is the human
+# reviewer (auditor seat) — enforces builder != auditor at the platform level.
+
+# The CLI/diffing source (config, diff engine, CLI entrypoint).
+/src/                     @geloumart2014-source
+# Gate + CI config + the dependency/build manifest + the action definition.
+/.github/                 @geloumart2014-source
+/pyproject.toml           @geloumart2014-source
+/action.yml               @geloumart2014-source

@@ -24,9 +24,13 @@ runs:
     - name: Run mcpdrift diff
       id: diff
       shell: bash
+      # care: inputs.config flows through env, never interpolated into the run
+      # body (shell-injection vector flagged by Semgrep run-shell-injection).
+      env:
+        MCPDRIFT_CONFIG: ${{ inputs.config }}
       run: |
         set +e
-        mcpdrift diff --config "${{ inputs.config }}" > mcpdrift-diff.txt 2>&1
+        mcpdrift diff --config "$MCPDRIFT_CONFIG" > mcpdrift-diff.txt 2>&1
         status=$?
         cat mcpdrift-diff.txt
         echo "exit_code=$status" >> "$GITHUB_OUTPUT"
@@ -59,4 +63,6 @@ runs:
 
     - name: Fail on breaking drift
       shell: bash
-      run: exit "${{ steps.diff.outputs.exit_code }}"
+      env:
+        MCPDRIFT_EXIT: ${{ steps.diff.outputs.exit_code }}
+      run: exit "$MCPDRIFT_EXIT"

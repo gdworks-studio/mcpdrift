@@ -1,0 +1,107 @@
+name: studio-os-gate
+
+# Pre-merge gate for mcpdrift (Python CLI / GitHub Action — MCP contract diff).
+# Pre-merge half of the two-gate model (vault:
+# references/production-readiness-system.md). One stable required check:
+# `studio-os-gate / gate`. (Separate from mcpdrift.yml, which dogfoods the action.)
+#
+# care: github context (github.base_ref) flows through env + quoted shell vars,
+# never interpolated into a run block (shell-injection vector).
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Conflict markers / stray whitespace
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git diff --check "origin/${BASE_REF}...HEAD"
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e ".[test]"
+      - name: Pytest
+        run: python -m pytest -q
+
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: gitleaks (CLI image — no org license, no PR API)
+        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest dir /repo --redact --no-banner
+
+  sast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Semgrep (Python + general security rules)
+        run: |
+          pip install --quiet semgrep
+          semgrep scan --error --config p/python --config p/ci --config p/secrets
+
+  deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      # No committed lockfile (pyproject only) -> resolve, freeze, then scan.
+      - name: Resolve + freeze dependencies
+        run: |
+          pip install -e .
+          pip freeze > requirements.txt
+      - name: OSV-Scanner (frozen requirements)
+        run: |
+          curl -sSfL "https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64" -o osv-scanner
+          chmod +x osv-scanner
+          ./osv-scanner --lockfile=requirements.txt
+
+  risk-router:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Classify blast radius (auth / payments / deletion / migrations)
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: python3 .github/scripts/risk_router.py "origin/${BASE_REF}"
+
+  gate:
+    runs-on: ubuntu-latest
+    needs: [hygiene, test, secrets-scan, sast, deps, risk-router]
+    if: always()
+    steps:
+      - name: Verdict
+        run: |
+          results="${{ needs.hygiene.result }} ${{ needs.test.result }} ${{ needs.secrets-scan.result }} ${{ needs.sast.result }} ${{ needs.deps.result }} ${{ needs.risk-router.result }}"
+          echo "Job results: $results"
+          for r in $results; do
+            if [ "$r" != "success" ]; then
+              echo "::error::studio-os-gate blocked — a required job did not pass."
+              exit 1
+            fi
+          done
+          echo "studio-os-gate: all required jobs passed."
