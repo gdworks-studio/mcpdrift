@@ -52,6 +52,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
+          # Dedicated label = unique key (never touches a human-created issue).
           gh label create security-rescan --color B60205 --description "Automated supply-chain re-scan tracker" --force >/dev/null 2>&1 || true
           title="Dependency vulnerabilities found by security-rescan"
           {
@@ -65,6 +66,7 @@ jobs:
           } > issue-body.md
           existing=$(gh issue list --state open --label security-rescan --json number --jq '.[0].number')
           if [ -n "$existing" ]; then
+            # Refresh the body in place (no weekly comment-thread growth).
             gh issue edit "$existing" --body-file issue-body.md
             echo "refreshed issue #$existing"
           else
