@@ -1,20 +1,16 @@
 <!--
 Studio OS PR template (GD Works Studio).
-Fill the human sections and tick what applies. The studio-os-gate runs the
-deterministic checks (tests, gitleaks, Semgrep, OSV) on its own, so you do not
-report those here. Keep it honest: a craftsperson signs this.
+The handoff to your reviewer, in the same shape as our Codex prompts: a metadata
+header, then purpose-labelled sections. Fill the < > parts and tick what applies.
+The studio-os-gate runs the deterministic checks (tests, gitleaks, Semgrep, OSV)
+automatically, so you do not re-report those here. Keep it honest.
 -->
 
-## What this does
-<one plain sentence: what changes for the user, and why>
+# PR: <one-line title>
 
-**Build:** <builder>  ·  **Audit:** <auditor>
+**Build:** <builder>   **Audit:** <auditor>   (never the same person)
 **Risk tier:** Trivial / Standard / Heavy
-
-> The builder and the auditor are never the same person.
-
-## Blast radius
-Tick what this PR touches. The risk-router verifies these against the diff.
+**Blast radius:** tick what this PR touches (the reviewer and risk-router cross-check it)
 
 - [ ] auth / permissions
 - [ ] payments / money
@@ -22,23 +18,25 @@ Tick what this PR touches. The risk-router verifies these against the diff.
 - [ ] public surface (something users see)
 - [ ] none of the above
 
-## Author checklist
-- [ ] Relevant checks run locally (tests, typecheck, lint), or noted why not
-- [ ] No secrets or `.env` committed
-- [ ] Blast radius above is accurate
-- [ ] Smallest diff that does the job, no drive-by changes
+## What this does
+<plain English: what changes for the user, and why. One short paragraph.>
+
+## How it was verified
+<what you ran or checked yourself: tests, drove the app, a screenshot. The gate
+covers the deterministic checks, so just add what a human actually confirmed.>
+
+## Review focus
+<where the reviewer should look first, the tradeoffs you made, anything you are
+unsure of. This is what saves the auditor time.>
 
 ## Department gates
-Leave these unticked. The reviewer signs them off before merge.
+The reviewer ticks these before merge:
 
-- [ ] **Heimdall, QA/QC (05):** tests pass, no regressions, behaves as described
-- [ ] **Forseti, Internal Audit (10):** logic, edge cases, data integrity
-- [ ] **Argus, Security (15):** secrets, dependencies, injection, vulnerabilities
-- [ ] **Freyja, Design (12):** visual fidelity (only if this touches UI)
-- [ ] **Tyr, External Audit (11):** only for High or Critical risk
-
-## Notes for the reviewer
-<what to look at first, tradeoffs, anything you are unsure of>
+- [ ] **Heimdall (05), QA/QC:** tests pass, no regressions, does what it says
+- [ ] **Forseti (10), Internal Audit:** logic, edge cases, data integrity
+- [ ] **Argus (15), Security:** secrets, dependencies, injection, vulnerabilities
+- [ ] **Freyja (12), Design:** visual fidelity (only if it touches UI)
+- [ ] **Tyr (11), External Audit:** only for High or Critical risk
 
 ## Care
-> Would a craftsperson sign this? <one line>
+> Would a craftsperson sign this? <one honest line>
