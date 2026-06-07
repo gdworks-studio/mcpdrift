@@ -1,0 +1,85 @@
+name: security-rescan
+
+# Scheduled supply-chain re-scan (Argus / dept 15). The pre-merge studio-os-gate
+# scans dependencies at merge time only; this catches advisories published AFTER
+# a dependency already shipped. Runs weekly against main. On findings it opens (or
+# refreshes) one tracking issue keyed by the dedicated `security-rescan` label;
+# when a later run is clean it closes it. Mirrors this repo's gate OSV invocation.
+
+on:
+  schedule:
+    - cron: "0 1 * * 1" # Mondays 01:00 UTC (~09:00 Manila)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  osv-rescan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Resolve + freeze dependencies
+        run: |
+          pip install -e .
+          pip freeze > requirements.txt
+      - name: OSV-Scanner (scheduled, markdown report)
+        id: scan
+        run: |
+          curl -sSfL --retry 5 --retry-all-errors --retry-delay 3 --connect-timeout 15 \
+            "https://github.com/google/osv-scanner/releases/download/v2.3.8/osv-scanner_linux_amd64" -o osv-scanner
+          chmod +x osv-scanner
+          set +e
+          ./osv-scanner --lockfile=requirements.txt --format markdown > osv-report.md
+          code=$?
+          set -e
+          cat osv-report.md
+          if [ "$code" -eq 0 ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          elif [ "$code" -eq 1 ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::osv-scanner errored (exit $code), not a vulnerability result"
+            exit "$code"
+          fi
+
+      - name: Open or refresh the tracking issue (findings)
+        if: steps.scan.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # Dedicated label = unique key (never touches a human-created issue).
+          gh label create security-rescan --color B60205 --description "Automated supply-chain re-scan tracker" --force >/dev/null 2>&1 || true
+          title="Dependency vulnerabilities found by security-rescan"
+          {
+            echo "The scheduled OSV re-scan found vulnerabilities in committed dependencies."
+            echo ""
+            echo "Run: $RUN_URL"
+            echo ""
+            cat osv-report.md
+            echo ""
+            echo "<!-- security-rescan-tracker -->"
+          } > issue-body.md
+          existing=$(gh issue list --state open --label security-rescan --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            # Refresh the body in place (no weekly comment-thread growth).
+            gh issue edit "$existing" --body-file issue-body.md
+            echo "refreshed issue #$existing"
+          else
+            gh issue create --title "$title" --label security-rescan --body-file issue-body.md
+          fi
+
+      - name: Close the tracking issue (clean)
+        if: steps.scan.outputs.found == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          existing=$(gh issue list --state open --label security-rescan --json number --jq '.[0].number' 2>/dev/null || true)
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "A later security-rescan came back clean. Closing."
+            gh issue close "$existing"
+          fi
