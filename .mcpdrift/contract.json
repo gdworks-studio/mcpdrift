@@ -1,0 +1,98 @@
+{
+  "mcp_protocol_version": "2025-11-25",
+  "prompts": [
+    {
+      "arguments": [
+        {
+          "name": "area",
+          "required": true
+        }
+      ],
+      "description": "Create a short triage plan for a documentation area.",
+      "name": "triage_docs"
+    }
+  ],
+  "resources": [
+    {
+      "description": "Sample status resource",
+      "name": "status",
+      "uri": "docs://status"
+    }
+  ],
+  "snapshot_schema_version": 1,
+  "tools": [
+    {
+      "description": "Look up an issue by numeric ID.",
+      "inputSchema": {
+        "properties": {
+          "issue_id": {
+            "title": "Issue Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "issue_id"
+        ],
+        "title": "lookup_issueArguments",
+        "type": "object"
+      },
+      "name": "lookup_issue",
+      "outputSchema": {
+        "properties": {
+          "issue_id": {
+            "title": "Issue Id",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "issue_id",
+          "status"
+        ],
+        "title": "LookupIssueResult",
+        "type": "object"
+      }
+    },
+    {
+      "description": "Search documentation snippets.",
+      "inputSchema": {
+        "properties": {
+          "limit": {
+            "default": 5,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_docsArguments",
+        "type": "object"
+      },
+      "name": "search_docs",
+      "outputSchema": {
+        "properties": {
+          "results": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "title": "SearchDocsResult",
+        "type": "object"
+      }
+    }
+  ]
+}
