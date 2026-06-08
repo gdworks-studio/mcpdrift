@@ -103,6 +103,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
+      # No committed lockfile (pyproject only) -> resolve + freeze so Trivy has a
+      # dependency file to scan (mirrors the OSV deps job; without this Trivy finds
+      # zero language-specific files and the 2nd dep scanner is a silent no-op).
+      - name: Resolve + freeze dependencies
+        run: |
+          pip install -e .
+          pip freeze > requirements.txt
       - name: Trivy (2nd deps/SCA + secret scanner — fixed HIGH/CRITICAL)
         run: docker run --rm -v "$PWD:/repo" aquasec/trivy:latest fs /repo --scanners vuln,secret --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --no-progress
 
