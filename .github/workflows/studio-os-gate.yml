@@ -89,14 +89,42 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: python3 .github/scripts/risk_router.py "origin/${BASE_REF}"
 
+  # --- AR9: a 2nd independent scanner per surface (Argus authz/security bible).
+  # "A single tool at 0 findings is evidence the tool is silent, not the surface safe."
+  trufflehog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with: { fetch-depth: 0 }
+      - name: TruffleHog (2nd secrets scanner — verified only)
+        run: docker run --rm -v "$PWD:/repo" trufflesecurity/trufflehog:latest filesystem /repo --only-verified --fail
+
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Trivy (2nd deps/SCA + secret scanner — fixed HIGH/CRITICAL)
+        run: docker run --rm -v "$PWD:/repo" aquasec/trivy:latest fs /repo --scanners vuln,secret --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --no-progress
+
+  bandit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
+      - name: Bandit (Python lang-native SAST — 2nd SAST)
+        run: |
+          pip install --quiet bandit
+          bandit -r src --severity-level medium --confidence-level medium
+
   gate:
     runs-on: ubuntu-latest
-    needs: [hygiene, test, secrets-scan, sast, deps, risk-router]
+    needs: [hygiene, test, secrets-scan, sast, deps, risk-router, trufflehog, trivy, bandit]
     if: always()
     steps:
       - name: Verdict
         run: |
-          results="${{ needs.hygiene.result }} ${{ needs.test.result }} ${{ needs.secrets-scan.result }} ${{ needs.sast.result }} ${{ needs.deps.result }} ${{ needs.risk-router.result }}"
+          results="${{ needs.hygiene.result }} ${{ needs.test.result }} ${{ needs.secrets-scan.result }} ${{ needs.sast.result }} ${{ needs.deps.result }} ${{ needs.risk-router.result }} ${{ needs.trufflehog.result }} ${{ needs.trivy.result }} ${{ needs.bandit.result }}"
           echo "Job results: $results"
           for r in $results; do
             if [ "$r" != "success" ]; then
