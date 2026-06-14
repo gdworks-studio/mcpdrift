@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 0, persist-credentials: false }
       - name: Conflict markers / stray whitespace
         env:
           BASE_REF: ${{ github.base_ref }}
@@ -35,6 +35,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with: { python-version: "3.12" }
       - run: pip install -e ".[test]"
@@ -45,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 0, persist-credentials: false }
       - name: gitleaks (CLI image — no org license, no PR API)
         run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest dir /repo --redact --no-banner
 
@@ -53,6 +55,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with: { python-version: "3.12" }
       - name: Semgrep (Python + general security rules)
@@ -64,6 +68,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with: { python-version: "3.12" }
       # No committed lockfile (pyproject only) -> resolve, freeze, then scan.
@@ -81,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 0, persist-credentials: false }
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with: { python-version: "3.12" }
       - name: Classify blast radius (auth / payments / deletion / migrations)
@@ -95,7 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 0, persist-credentials: false }
       - name: TruffleHog (2nd secrets scanner — verified only)
         run: docker run --rm -v "$PWD:/repo" trufflesecurity/trufflehog:latest filesystem /repo --only-verified --fail
 
@@ -103,6 +109,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with: { python-version: "3.12" }
       # No committed lockfile (pyproject only) -> resolve + freeze so Trivy has a
@@ -119,6 +127,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with: { python-version: "3.12" }
       - name: Bandit (Python lang-native SAST — 2nd SAST)
@@ -126,14 +136,25 @@ jobs:
           pip install --quiet bandit
           bandit -r src --severity-level medium --confidence-level medium
 
+  workflow-lint:
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+        with:
+          persist-credentials: false
+      - name: actionlint (workflow syntax/typing)
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color
+      - name: zizmor (workflow security audit — AR9 2nd lens; offline=hermetic)
+        run: docker run --rm -v "$PWD:/repo" ghcr.io/zizmorcore/zizmor:latest@sha256:14ea7f5cc7c67933394a35b5a38a277397818d232602635edb2010b313afb110 --offline --min-severity=low /repo/.github/workflows
+
   gate:
     runs-on: ubuntu-latest
-    needs: [hygiene, test, secrets-scan, sast, deps, risk-router, trufflehog, trivy, bandit]
+    needs: [hygiene, test, secrets-scan, sast, deps, risk-router, trufflehog, trivy, bandit, workflow-lint]
     if: always()
     steps:
       - name: Verdict
         run: |
-          results="${{ needs.hygiene.result }} ${{ needs.test.result }} ${{ needs.secrets-scan.result }} ${{ needs.sast.result }} ${{ needs.deps.result }} ${{ needs.risk-router.result }} ${{ needs.trufflehog.result }} ${{ needs.trivy.result }} ${{ needs.bandit.result }}"
+          results="${{ needs.hygiene.result }} ${{ needs.test.result }} ${{ needs.secrets-scan.result }} ${{ needs.sast.result }} ${{ needs.deps.result }} ${{ needs.risk-router.result }} ${{ needs.trufflehog.result }} ${{ needs.trivy.result }} ${{ needs.bandit.result }} ${{ needs.workflow-lint.result }}"
           echo "Job results: $results"
           for r in $results; do
             if [ "$r" != "success" ]; then
