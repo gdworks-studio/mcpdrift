@@ -6,7 +6,7 @@ name: dependabot-automerge
 # auto-merges after the gate passes AND the reviewer approves (no manual merge
 # click). github context is routed via env (no run-body interpolation).
 
-on: pull_request_target
+on: pull_request_target  # zizmor: ignore[dangerous-triggers] — automerge needs it; never checks out PR code
 
 permissions:
   contents: write
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   automerge:
-    if: ${{ github.actor == 'dependabot[bot]' }}
+    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - name: Dependabot metadata
