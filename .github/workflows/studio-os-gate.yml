@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   hygiene:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER) }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
         with: { fetch-depth: 0 }
@@ -32,7 +32,7 @@ jobs:
         run: git diff --check "origin/${BASE_REF}...HEAD"
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER) }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
@@ -42,7 +42,7 @@ jobs:
         run: python -m pytest -q
 
   secrets-scan:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER) }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
         with: { fetch-depth: 0 }
@@ -50,7 +50,7 @@ jobs:
         run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest dir /repo --redact --no-banner
 
   sast:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER) }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
@@ -61,7 +61,7 @@ jobs:
           semgrep scan --error --config p/python --config p/ci --config p/secrets
 
   deps:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER) }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
@@ -78,7 +78,7 @@ jobs:
             --lockfile=requirements.txt
 
   risk-router:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER) }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
         with: { fetch-depth: 0 }
@@ -92,7 +92,7 @@ jobs:
   # --- AR9: a 2nd independent scanner per surface (Argus authz/security bible).
   # "A single tool at 0 findings is evidence the tool is silent, not the surface safe."
   trufflehog:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER) }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
         with: { fetch-depth: 0 }
@@ -100,7 +100,7 @@ jobs:
         run: docker run --rm -v "$PWD:/repo" trufflesecurity/trufflehog:latest filesystem /repo --only-verified --fail
 
   trivy:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER) }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
@@ -116,7 +116,7 @@ jobs:
         run: docker run --rm -v "$PWD:/repo" aquasec/trivy:latest fs /repo --scanners vuln,secret --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --no-progress
 
   bandit:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER) }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
@@ -127,7 +127,7 @@ jobs:
           bandit -r src --severity-level medium --confidence-level medium
 
   gate:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER) }}
     needs: [hygiene, test, secrets-scan, sast, deps, risk-router, trufflehog, trivy, bandit]
     if: always()
     steps:
