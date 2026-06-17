@@ -11,3 +11,7 @@ build/
 # Ignore mcpdrift scratch, but track the dogfood baseline the CI diffs against.
 /.mcpdrift/*
 !/.mcpdrift/contract.json
+
+# macOS
+.DS_Store
+._*
