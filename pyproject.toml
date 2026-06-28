@@ -13,7 +13,7 @@ authors = [
   { name = "G&D Works" }
 ]
 dependencies = [
-  "mcp==1.28.0",
+  "mcp==1.28.1",
   "typer>=0.20,<1.0",
   "tomli>=2.0; python_version < '3.11'"
 ]
