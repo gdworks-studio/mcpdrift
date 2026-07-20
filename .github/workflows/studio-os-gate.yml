@@ -137,7 +137,7 @@ jobs:
           bandit -r src --severity-level medium --confidence-level medium
 
   workflow-lint:
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ${{ fromJSON(vars.CI_RUNNER) }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
