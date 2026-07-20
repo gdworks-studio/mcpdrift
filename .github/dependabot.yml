@@ -3,11 +3,14 @@ version: 2
 # Automated dependency updates (Argus / dept 15). Weekly, GROUPED (minor+patch
 # batched into one PR per ecosystem; majors stay individual for review). Each PR
 # runs through the studio-os-gate; low-risk ones auto-merge (dependabot-automerge.yml).
+# cooldown: hold brand-new releases a few days before proposing (supply-chain guard).
 updates:
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5
     labels: ["dependencies"]
     groups:
@@ -17,6 +20,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     labels: ["dependencies"]
     groups:
       github-actions:
