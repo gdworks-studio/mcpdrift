@@ -73,6 +73,12 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6
         with: { python-version: "3.12" }
       # No committed lockfile (pyproject only) -> resolve, freeze, then scan.
+      # care: that freeze is the FULL transitive closure, already pinned. Re-resolving it through OSV's
+      # NETWORK transitive resolver adds ZERO coverage and one hard failure mode: on 2026-07-25 `deps`
+      # died with `rpc error: code = Unavailable desc = service unavailable` — an upstream outage
+      # presenting as a dependency failure, i.e. a RED gate carrying ZERO findings. `--no-resolve` sets
+      # osv-scanner's TransitiveScanning.Disabled (verified in its source, scan/source/command.go):
+      # it removes the NETWORK dependency, not the checking.
       - name: Resolve + freeze dependencies
         run: |
           pip install -e .
@@ -81,6 +87,7 @@ jobs:
         uses: google/osv-scanner-action/osv-scanner-action@9a498708959aeaef5ef730655706c5a1df1edbc2  # v2.3.8
         with:
           scan-args: |-
+            --no-resolve
             --lockfile=requirements.txt
 
   risk-router:
