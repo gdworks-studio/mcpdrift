@@ -23,13 +23,13 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Auto-approve low-risk updates
-        if: ${{ steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor' || steps.meta.outputs.package-ecosystem == 'github_actions' }}
+        if: ${{ steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor' }}
         env:
           GH_TOKEN: ${{ secrets.DEPENDABOT_APPROVER_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: gh pr review --approve "$PR_URL"
       - name: Enable auto-merge for low-risk updates
-        if: ${{ steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor' || steps.meta.outputs.package-ecosystem == 'github_actions' }}
+        if: ${{ steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
